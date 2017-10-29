@@ -82,6 +82,50 @@ def MyfileDecrypt(C, IV, key, fileName, ext):
 
 
 
+def MyRSAEncrypt(filepath, RSA_Publickey_filepath):
+    #encrypt file to get the key
+    C, IV, key, ext = MyfileEncrypt(filepath)
+    
+    #load the public key
+    with open(RSA_Publickey_filepath, "rb") as key_file:
+        public_key = serialization.load_pem_public_key(
+                key_file.read(),
+                backend=default_backend()
+                )
+    #encrypt the key to get RSACipher
+    RSACipher = public_key.encrypt(
+            key, 
+            asymm.padding.OAEP(
+                    mgf=asymm.padding.MGF1(algorithm=hashes.SHA256()),
+                    algorithm=hashes.SHA256(),
+                    label=None 
+                    )
+            )
+    
+    return RSACipher, C, IV, ext
+    
+    
+def MyRSADecrypt(RSACipher, C, IV, filepath, ext, RSA_Privatekey_filepath):
+    #load private key
+    with open(RSA_Privatekey_filepath, "rb") as key_file:
+        private_key = serialization.load_pem_private_key(
+                key_file.read(),
+                password=None,
+                backend=default_backend())
+        
+    #decrypt the RSACipher to get the key
+    key = private_key.decrypt(
+        RSACipher,
+        asymm.padding.OAEP(
+                mgf=asymm.padding.MGF1(algorithm=hashes.SHA256()),
+                algorithm=hashes.SHA256(),
+                label=None
+        )
+    )
+    #decrypt using original key
+    MyfileDecrypt(C, IV, key, filepath, ext)
+        
+
 def generateKeys():
     # key info
     key = rsa.generate_private_key(backend=default_backend(), 
@@ -118,12 +162,17 @@ def generateKeys():
 import time
 
 #generateKeys()
+# testing RSA
+RSACipher, C, IV, ext = MyRSAEncrypt("img/bird.jpg", "keys/public_key.pem")
+time.sleep(5)
+MyRSADecrypt(RSACipher, C, IV, "img/birdenc", ext, "keys/private_key.pem")
+#Test case for jpg file
 """
 fileName = "img/bird.jpg"
-C, IV, key, ext = MyfileEncrypt(fileName)
+C, IV, akey, ext = MyfileEncrypt(fileName)
 time.sleep(3)
 fileName2 = "img/birdenc"
-MyfileDecrypt(C, IV, key, fileName2, ext)
+MyfileDecrypt(C, IV, akey, fileName2, ext)
 """
 
 #test case for text
