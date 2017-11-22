@@ -134,10 +134,29 @@ def MyRSADecrypt(RSACipher, C, IV, filepath, ext, RSA_Privatekey_filepath, tag):
         
 
 def generateKeys():
-    # key info
-    key = rsa.generate_private_key(backend=default_backend(), 
-                                   public_exponent=65537,
-                                      key_size=2048)
+    #check if key folder exists
+    folder = "keys"
+    privkey_name = "private_key.pem"
+    pubkey_name = "public_key.pem"
+    files = os.listdir()
+    if folder not in files:
+        #create keys folder
+        os.mkdir(folder)
+        
+    os.chdir(folder)
+    #check if keys exist
+    files = os.listdir()
+    priv_exist = privkey_name in files
+    pub_exist = pubkey_name in files
+    #keys dont exist
+    if priv_exist is True and pub_exist is True:
+        return True
+    
+    # key info(
+    key = rsa.generate_private_key(
+            backend=default_backend(), 
+            public_exponent=65537,
+            key_size=2048)
     # private key
     private_pem = key.private_bytes(
             encoding=serialization.Encoding.PEM,
@@ -145,7 +164,7 @@ def generateKeys():
             encryption_algorithm=serialization.NoEncryption()
             )
     #write private key to file
-    with open("keys/private_key.pem", 'wb') as file:
+    with open(privkey_name, 'wb') as file:
         file.write(private_pem)
         file.close()
     
@@ -156,25 +175,25 @@ def generateKeys():
             format=serialization.PublicFormat.SubjectPublicKeyInfo
             )
     #write pub key to file
-    with open("keys/public_key.pem", 'wb') as file:
+    with open(pubkey_name, 'wb') as file:
         file.write(public_pem)
         file.close()
-        
-    print(private_pem)
-    print(public_pem)
-    #print(public_pem.decode('utf-8'))
     
-
+    return False
+    
 
 import time
 
-#generateKeys()
+files = os.listdir()
+files.remove("keys")
+print(files)
+generateKeys()
 # testing RSA\
-
+"""
 RSACipher, C, IV, ext, tag = MyRSAEncrypt("img/bird.jpg", "keys/public_key.pem")
 time.sleep(5)
 MyRSADecrypt(RSACipher, C, IV, "img/birdenc", ext, "keys/private_key.pem", tag)
-
+"""
 #Test case for jpg file
 """
 fileName = "img/bird.jpg"
