@@ -193,9 +193,6 @@ files = os.listdir()
 if "keys" in files:
     files.remove("keys")
 print(files)
-#testing on img folder
-#os.chdir("img")
-"""
 ########### encryption starts
 #img folder used for testing
 files = os.listdir("img")
@@ -221,69 +218,35 @@ for x in files:
             "tag": tag.decode('latin-1')     
             })
     js.update(j)
-    
-    #time.sleep(5)
-    #MyRSADecrypt(RSACipher, C, IV, "img/" + x, ext, "keys/private_key.pem", tag)
+    #remove original files
+    os.remove("img/" + x)
 
 #write to a json file
 with open('data.json', 'w') as outfile:
     a = 0
     json.dump(js, outfile, indent=4)
-"""
+
 
 ##########  decryption starts
 #opens the json file
 
+time.sleep(5)
+
 with open('data.json', 'r') as re:
     s = json.load(re)
 #print(s)
+
 files = os.listdir("img")
 print(files)
-
-    
-print(bytes(s["fb"][0]["RSACipher"], 'latin-1'))
-xRSACipher = bytes(s["fb"][0]["RSACipher"], 'latin-1')
-xC = bytes(s["fb"][0]["C"], 'latin-1')
-xIV = bytes(s["fb"][0]["IV"], 'latin-1')
-xExt = s["fb"][0]["ext"]
-xTag = bytes(s["fb"][0]["tag"], 'latin-1')
-MyRSADecrypt(xRSACipher, xC, xIV, "img/fb", xExt, "keys/private_key.pem", xTag)
-    
-"""
-data = {}  
-data['people'] = []  
-data['people'].append({  
-    'name': 'Scott',
-    'website': 'stackabuse.com',
-    'from': 'Nebraska'
-})
-data['people'].append({  
-    'name': 'Larry',
-    'website': 'google.com',
-    'from': 'Michigan'
-})
-data['people'].append({  
-    'name': 'Tim',
-    'website': 'apple.com',
-    'from': 'Alabama'
-})
-
-with open('zz.json', 'w') as outfile:  
-    json.dump(data, outfile, indent=4)
-    
-    
-with open('zz.json') as json_file:  
-    data = json.load(json_file)
-    for p in data['people']:
-        print(p)
-    
-        print('Name: ' + p['name'])
-        print('Website: ' + p['website'])
-        print('From: ' + p['from'])
-        print('')
-        """
-
-
+for file_name in files:     
+    xRSACipher = bytes(s[file_name][0]["RSACipher"], 'latin-1')
+    xC = bytes(s[file_name][0]["C"], 'latin-1')
+    xIV = bytes(s[file_name][0]["IV"], 'latin-1')
+    xExt = s[file_name][0]["ext"]
+    xTag = bytes(s[file_name][0]["tag"], 'latin-1')
+    MyRSADecrypt(xRSACipher, xC, xIV, "img/" + file_name, xExt, "keys/private_key.pem", xTag)
+    #remove encrpyted files
+    os.remove("img/" + file_name)
 
 
 
