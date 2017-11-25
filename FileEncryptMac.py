@@ -1,6 +1,9 @@
+
+
 import os
 import base64
 import cryptography
+import json
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding, serialization, hashes, hmac
@@ -67,7 +70,7 @@ def MyfileEncryptMAC(filePath):
     iv, c, tag = MyencryptMAC(imgStr, imgKey, HMACKey)
 
     # converts an encrypted img string into an image
-    encFile = filePath + "enc" + ext
+    encFile = filePath#  + ext
     with open(encFile, 'wb') as file:
         file.write(c)
         file.close()
@@ -143,13 +146,14 @@ def generateKeys():
         #create keys folder
         os.mkdir(folder)
         
-    os.chdir(folder)
+    #os.chdir(folder)
     #check if keys exist
-    files = os.listdir()
+    files = os.listdir(folder)
     priv_exist = privkey_name in files
     pub_exist = pubkey_name in files
     #keys dont exist
     if priv_exist is True and pub_exist is True:
+        print("Keys have been found!!")
         return True
     
     # key info(
@@ -164,7 +168,7 @@ def generateKeys():
             encryption_algorithm=serialization.NoEncryption()
             )
     #write private key to file
-    with open(privkey_name, 'wb') as file:
+    with open(folder + "\\" + privkey_name, 'wb') as file:
         file.write(private_pem)
         file.close()
     
@@ -175,24 +179,121 @@ def generateKeys():
             format=serialization.PublicFormat.SubjectPublicKeyInfo
             )
     #write pub key to file
-    with open(pubkey_name, 'wb') as file:
+    with open(folder + "\\" + pubkey_name, 'wb') as file:
         file.write(public_pem)
         file.close()
-    
+    print("Keys have been created!!")
     return False
     
 
 import time
 
-files = os.listdir()
-files.remove("keys")
-print(files)
 generateKeys()
+files = os.listdir()
+if "keys" in files:
+    files.remove("keys")
+print(files)
+#testing on img folder
+#os.chdir("img")
+"""
+########### encryption starts
+#img folder used for testing
+files = os.listdir("img")
+print(files)
+js = {}
+#js["files"] = []
+for x in files:
+    print("Encrypting " + x + "...")
+    
+    RSACipher, C, IV, ext, tag = MyRSAEncrypt("img/" + x, "keys/public_key.pem")
+    
+
+    #store in json file
+    fname = os.path.splitext(str(x))[0]
+    j = {}
+    j[fname] = []
+    #decode into latin-1 to write to json (utf-8 doesnt work)
+    j[fname].append({
+            "RSACipher": RSACipher.decode('latin-1'),
+            "C": C.decode('latin-1'),
+            "IV": IV.decode('latin-1'),
+            "ext": ext,
+            "tag": tag.decode('latin-1')     
+            })
+    js.update(j)
+    
+    #time.sleep(5)
+    #MyRSADecrypt(RSACipher, C, IV, "img/" + x, ext, "keys/private_key.pem", tag)
+
+#write to a json file
+with open('data.json', 'w') as outfile:
+    a = 0
+    json.dump(js, outfile, indent=4)
+"""
+
+##########  decryption starts
+#opens the json file
+
+with open('data.json', 'r') as re:
+    s = json.load(re)
+#print(s)
+files = os.listdir("img")
+print(files)
+
+    
+print(bytes(s["fb"][0]["RSACipher"], 'latin-1'))
+xRSACipher = bytes(s["fb"][0]["RSACipher"], 'latin-1')
+xC = bytes(s["fb"][0]["C"], 'latin-1')
+xIV = bytes(s["fb"][0]["IV"], 'latin-1')
+xExt = s["fb"][0]["ext"]
+xTag = bytes(s["fb"][0]["tag"], 'latin-1')
+MyRSADecrypt(xRSACipher, xC, xIV, "img/fb", xExt, "keys/private_key.pem", xTag)
+    
+"""
+data = {}  
+data['people'] = []  
+data['people'].append({  
+    'name': 'Scott',
+    'website': 'stackabuse.com',
+    'from': 'Nebraska'
+})
+data['people'].append({  
+    'name': 'Larry',
+    'website': 'google.com',
+    'from': 'Michigan'
+})
+data['people'].append({  
+    'name': 'Tim',
+    'website': 'apple.com',
+    'from': 'Alabama'
+})
+
+with open('zz.json', 'w') as outfile:  
+    json.dump(data, outfile, indent=4)
+    
+    
+with open('zz.json') as json_file:  
+    data = json.load(json_file)
+    for p in data['people']:
+        print(p)
+    
+        print('Name: ' + p['name'])
+        print('Website: ' + p['website'])
+        print('From: ' + p['from'])
+        print('')
+        """
+
+
+
+
+
 # testing RSA\
 """
-RSACipher, C, IV, ext, tag = MyRSAEncrypt("img/bird.jpg", "keys/public_key.pem")
+zz, C, IV, ext, tag = MyRSAEncrypt("img/bird.jpg", "keys/public_key.pem")
+a = zz.decode("latin-1")
+b = bytes(a, 'latin-1')
 time.sleep(5)
-MyRSADecrypt(RSACipher, C, IV, "img/birdenc", ext, "keys/private_key.pem", tag)
+MyRSADecrypt(b, C, IV, "img/birdenc", ext, "keys/private_key.pem", tag)
 """
 #Test case for jpg file
 """
