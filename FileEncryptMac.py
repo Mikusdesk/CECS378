@@ -185,28 +185,26 @@ def generateKeys():
     print("Keys have been created!!")
     return False
     
-
 import time
 
 generateKeys()
+########### encryption starts
 files = os.listdir()
+print(files)
 if "keys" in files:
     files.remove("keys")
-print(files)
-########### encryption starts
-#img folder used for testing
-files = os.listdir("img")
-print(files)
+if "data.json" in files:
+    files.remove("data.json")
+if "FileEncryptMac.exe" in files:
+    files.remove("FileEncryptMac.exe")
+	
 js = {}
-#js["files"] = []
-for x in files:
-    print("Encrypting " + x + "...")
+for file_name in files:
+    print("Encrypting " + file_name + "...") 
+    RSACipher, C, IV, ext, tag = MyRSAEncrypt(file_name, "keys/public_key.pem")
     
-    RSACipher, C, IV, ext, tag = MyRSAEncrypt("img/" + x, "keys/public_key.pem")
-    
-
     #store in json file
-    fname = os.path.splitext(str(x))[0]
+    fname = os.path.splitext(str(file_name))[0]
     j = {}
     j[fname] = []
     #decode into latin-1 to write to json (utf-8 doesnt work)
@@ -219,62 +217,36 @@ for x in files:
             })
     js.update(j)
     #remove original files
-    os.remove("img/" + x)
+    os.remove(file_name)
 
 #write to a json file
 with open('data.json', 'w') as outfile:
-    a = 0
     json.dump(js, outfile, indent=4)
 
-
 ##########  decryption starts
-#opens the json file
-
 time.sleep(5)
 
+#opens the json file
 with open('data.json', 'r') as re:
     s = json.load(re)
-#print(s)
 
-files = os.listdir("img")
-print(files)
+files = os.listdir()
+if "keys" in files:
+    files.remove("keys")
+if "data.json" in files:
+    files.remove("data.json")
+if "FileEncryptMac.exe" in files:
+    files.remove("FileEncryptMac.exe")
+	
 for file_name in files:     
+    print("Decrypting " + file_name + "...")
     xRSACipher = bytes(s[file_name][0]["RSACipher"], 'latin-1')
     xC = bytes(s[file_name][0]["C"], 'latin-1')
     xIV = bytes(s[file_name][0]["IV"], 'latin-1')
     xExt = s[file_name][0]["ext"]
     xTag = bytes(s[file_name][0]["tag"], 'latin-1')
-    MyRSADecrypt(xRSACipher, xC, xIV, "img/" + file_name, xExt, "keys/private_key.pem", xTag)
+    MyRSADecrypt(xRSACipher, xC, xIV, file_name, xExt, "keys/private_key.pem", xTag)
     #remove encrpyted files
-    os.remove("img/" + file_name)
+    os.remove(file_name)
 
-
-
-# testing RSA\
-"""
-zz, C, IV, ext, tag = MyRSAEncrypt("img/bird.jpg", "keys/public_key.pem")
-a = zz.decode("latin-1")
-b = bytes(a, 'latin-1')
 time.sleep(5)
-MyRSADecrypt(b, C, IV, "img/birdenc", ext, "keys/private_key.pem", tag)
-"""
-#Test case for jpg file
-"""
-fileName = "img/bird.jpg"
-C, IV, akey, ext = MyfileEncrypt(fileName)
-time.sleep(3)
-fileName2 = "img/birdenc"
-MyfileDecrypt(C, IV, akey, fileName2, ext)
-"""
-
-#test case for text
-"""
-key = os.urandom(32)
-sMessage = "This is a test run for the encryption method, it will decrypt shortly after"
-iv, ct = Myencrypt(sMessage, key)
-print("The IV is: >>>", iv)
-print("The Cipher-text is: >>>", ct)
-time.sleep(3)
-message = Mydecrypt(ct, iv, key)
-print(message)
-"""
