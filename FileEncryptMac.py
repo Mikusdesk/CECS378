@@ -70,11 +70,12 @@ def MyfileEncryptMAC(filePath):
     iv, c, tag = MyencryptMAC(imgStr, imgKey, HMACKey)
 
     # converts an encrypted img string into an image
+    """
     encFile = filePath#  + ext
     with open(encFile, 'wb') as file:
         file.write(c)
         file.close()
-
+    """
     return c, iv, imgKey, ext, HMACKey, tag
     
 
@@ -185,68 +186,64 @@ def generateKeys():
     print("Keys have been created!!")
     return False
     
-import time
-
-generateKeys()
-########### encryption starts
-files = os.listdir()
-print(files)
-if "keys" in files:
-    files.remove("keys")
-if "data.json" in files:
-    files.remove("data.json")
-if "FileEncryptMac.exe" in files:
-    files.remove("FileEncryptMac.exe")
 	
-js = {}
-for file_name in files:
-    print("Encrypting " + file_name + "...") 
-    RSACipher, C, IV, ext, tag = MyRSAEncrypt(file_name, "keys/public_key.pem")
+def startEncrypt():
+    files = os.listdir()
     
-    #store in json file
-    fname = os.path.splitext(str(file_name))[0]
-    j = {}
-    j[fname] = []
-    #decode into latin-1 to write to json (utf-8 doesnt work)
-    j[fname].append({
+    if "keys" in files:
+        files.remove("keys")
+    if "FileEncryptMac.exe" in files:
+        files.remove("FileEncryptMac.exe")
+        
+    for file_name in files:
+        print("Encrypting " + file_name + "...") 
+        RSACipher, C, IV, ext, tag = MyRSAEncrypt(file_name, "keys/public_key.pem")        	
+    
+        fname = os.path.splitext(str(file_name))[0]
+        #decode into latin-1 to write to json (utf-8 doesnt work)
+        js = {
             "RSACipher": RSACipher.decode('latin-1'),
             "C": C.decode('latin-1'),
             "IV": IV.decode('latin-1'),
             "ext": ext,
             "tag": tag.decode('latin-1')     
-            })
-    js.update(j)
-    #remove original files
-    os.remove(file_name)
+        }         
+        #store in json file 
+        with open(fname + '.json', 'w') as outfile:
+            json.dump(js, outfile, indent=4)
+        #remove original files
+        os.remove(file_name)
+    		
+def startDecrypt():	
+    files = os.listdir()
+    
+    if "keys" in files:
+        files.remove("keys")
+    if "FileEncryptMac.exe" in files:
+        files.remove("FileEncryptMac.exe")
 
-#write to a json file
-with open('data.json', 'w') as outfile:
-    json.dump(js, outfile, indent=4)
+    for file_name in files:     
+        #opens the json file
+        with open(file_name, 'r') as re:
+            s = json.load(re)
+        #get filename w/e extension
+        fname = os.path.splitext(str(file_name))[0]
+        
+        print("Decrypting " + file_name + "...")
+        #encrypted file data
+        xRSACipher = bytes(s["RSACipher"], 'latin-1')
+        xC = bytes(s["C"], 'latin-1')
+        xIV = bytes(s["IV"], 'latin-1')
+        xExt = s["ext"]
+        xTag = bytes(s["tag"], 'latin-1')
+        MyRSADecrypt(xRSACipher, xC, xIV, fname, xExt, "keys/private_key.pem", xTag)
+        #remove json files
+        os.remove(file_name)
 
-##########  decryption starts
+import time
+
+generateKeys()
+startEncrypt()
 time.sleep(5)
-
-#opens the json file
-with open('data.json', 'r') as re:
-    s = json.load(re)
-
-files = os.listdir()
-if "keys" in files:
-    files.remove("keys")
-if "data.json" in files:
-    files.remove("data.json")
-if "FileEncryptMac.exe" in files:
-    files.remove("FileEncryptMac.exe")
-	
-for file_name in files:     
-    print("Decrypting " + file_name + "...")
-    xRSACipher = bytes(s[file_name][0]["RSACipher"], 'latin-1')
-    xC = bytes(s[file_name][0]["C"], 'latin-1')
-    xIV = bytes(s[file_name][0]["IV"], 'latin-1')
-    xExt = s[file_name][0]["ext"]
-    xTag = bytes(s[file_name][0]["tag"], 'latin-1')
-    MyRSADecrypt(xRSACipher, xC, xIV, file_name, xExt, "keys/private_key.pem", xTag)
-    #remove encrpyted files
-    os.remove(file_name)
-
+startDecrypt()
 time.sleep(5)
